@@ -40,6 +40,7 @@ import matplotlib.pyplot as plt
 warnings.filterwarnings("ignore")
 
 
+#setting command line arguments 
 parser = argparse.ArgumentParser(description="Transformer segmentation pipeline")
 parser.add_argument("--datapath", default="../Dataset_BRATS_2020/Training/", type=str, help="Dataset path")
 parser.add_argument("--epochs", default=5, type=int, help="max number of training epochs")
@@ -79,6 +80,7 @@ weighted_class = True if args.augmented == 1 else 0
 lr = args.lr
 resume_ckpt = True if args.resume_ckpt == 1 else 0
 
+# model input image size
 roi_size = [128, 128, 64]
 pixdim = (1.5, 1.5, 2.0)
 
@@ -90,6 +92,8 @@ metric_values = []
 metric_values_tc = []
 metric_values_wt = []
 metric_values_et = []
+
+# setting dataset path 
 
 if ds == "2020":
     data_dir = args.datapath
@@ -140,6 +144,7 @@ elif ds == "2020-2021":  # combiantion of 2020 and 2021, TODO: remove
 n_data = len(t1_list)
 print(f"Dataset size: {n_data}")
 
+# dictionary with two keys  image and label
 data_dicts = [
     {"images": [t1, t2, t1ce, f], "label": label_name}
     for t1, t2, t1ce, f, label_name in zip(
@@ -166,12 +171,14 @@ data_dicts = [
 #     x = nib.load(p).get_fdata(dtype="float32", caching="unchanged")
 #     print(type(x))
 
-
+# frac is fraction of data to be used in validation
+# creation of validation and train files from dataset
 val_files, train_files = (
     data_dicts[: int(n_data * frac)],
     data_dicts[int(n_data * frac):],
 )
 
+# transformation of dataset ; check documentation monai
 train_transform = Compose(
     [
         # load 4 Nifti images and stack them together
@@ -248,6 +255,7 @@ val_ds = Dataset(data=val_files, transform=val_transform)
 train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=n_workers)
 val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=True, num_workers=n_workers)
 
+# what - definitely does something with weights - what are weights - probably classes are not equal
 if weighted_class:
     weights = np.array([45, 16, 50], dtype="f")
     class_weights = torch.tensor(
@@ -304,6 +312,7 @@ elif model_name == "unet":
         num_res_units=2,
     ).to(device)
 
+# gives idea about size of the model in terms of trainable parameters
 pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print("Total parameters count", pytorch_total_params)
 
@@ -311,6 +320,7 @@ print("Total parameters count", pytorch_total_params)
 #     if "swinViT" in name and "layers" in name:
 #         param.requires_grad = False
 
+# loss function
 # loss_function = DiceCELoss(to_onehot_y=False, sigmoid=True, ce_weight=class_weights)
 # loss_function = DiceLoss(to_onehot_y=False, sigmoid=True)
 # loss_function = DiceLoss(to_onehot_y=False, sigmoid=True, squared_pred=True, smooth_nr=0.0, smooth_dr=1e-6)
@@ -320,15 +330,22 @@ loss_function = FocalLoss(gamma=1)
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-5)
 # optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.99, nesterov=True, weight_decay=1e-5)
 
+# what
+# this scheduler combines linear warm-up with cosine annealing, 
+# gradually increasing the learning rate during the warm-up phase 
+# and then applying cosine annealing to smoothly decrease it.
+
 scheduler = LinearWarmupCosineAnnealingLR(
     optimizer, warmup_epochs=1, max_epochs=max_epochs
 )
 torch.cuda.empty_cache()
 
+# save results
 results_path = os.path.join(".", "RESULTS")
 if os.path.exists(results_path) == False:
     os.mkdir(results_path)
 
+# training loop
 for epoch in range(max_epochs):
     start = time.time()
     print(f"Epoch {epoch + 1}/{max_epochs}")
