@@ -8,7 +8,8 @@ from networks.nets import SwinUNETR, UNETR, UNet
 from monai.utils import set_determinism
 from monai.transforms import (
     Activations,
-    AsChannelFirstd,
+    #AsChannelFirstd,
+    EnsureChannelFirstd,
     AsChannelLastd,
     AsDiscrete,
     CenterSpatialCropd,
@@ -183,7 +184,8 @@ train_transform = Compose(
     [
         # load 4 Nifti images and stack them together
         LoadImaged(keys=["images", "label"]),
-        AsChannelFirstd(keys="images", channel_dim=0),
+        #AsChannelFirstd(keys="images", channel_dim=0),
+        EnsureChannelFirstd(keys="images",channel_dim=0),
         ConvertToMultiChannelBasedOnBratsClassesd(keys="label"),
         Spacingd(
             keys=["images", "label"],
@@ -204,7 +206,8 @@ train_transform = Compose(
 val_transform = Compose(
     [
         LoadImaged(keys=["images", "label"]),
-        AsChannelFirstd(keys="images", channel_dim=0),
+        #AsChannelFirstd(keys="images", channel_dim=0),
+        EnsureChannelFirstd(keys="images",channel_dim=0),
         ConvertToMultiChannelBasedOnBratsClassesd(keys="label"),
         Spacingd(
             keys=["images", "label"],
