@@ -43,7 +43,7 @@ warnings.filterwarnings("ignore")
 
 #setting command line arguments 
 parser = argparse.ArgumentParser(description="Transformer segmentation pipeline")
-parser.add_argument("--datapath", default="../Dataset_BRATS_2020/Training/", type=str, help="Dataset path")
+parser.add_argument("--datapath", default="./Dataset_BRATS_2020/Training/", type=str, help="Dataset path")
 parser.add_argument("--epochs", default=5, type=int, help="max number of training epochs")
 parser.add_argument("--batch_size", default=1, type=int, help="number of batch size")
 parser.add_argument("--dataset", default="2020", type=str, help="Dataset to use")
